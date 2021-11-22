@@ -100,4 +100,3 @@ perspective_data = {'perspective_transform':M,
 with open(settings.PERSPECTIVE_FILE_NAME, 'wb') as f:
     pickle.dump(perspective_data, f)
 
-

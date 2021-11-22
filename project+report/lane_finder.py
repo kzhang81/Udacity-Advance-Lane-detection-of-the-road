@@ -14,6 +14,10 @@ from settings import CALIB_FILE_NAME, PERSPECTIVE_FILE_NAME
 def get_curvature(matrix_coefficient, img_size, pixel_Per_Metter):
     return ((1 + (2*matrix_coefficient[0]*img_size[1]/pixel_Per_Metter[1] + matrix_coefficient[1])**2)**1.5) / np.absolute(2*matrix_coefficient[0])
 
+def get_center_shift(matrix_coefficient, img_size, pixel_Per_Metter):
+    # TODO: need to find out what goes here!
+    return 0
+
 class LaneLineFinder:
     def __init__(self, img_size, pixel_Per_Metter, center_shift):
         self.found = False
@@ -206,7 +210,8 @@ class LaneFinder:
         road_mask = cv2.morphologyEx(road_mask, cv2.MORPH_OPEN, small_kernel)
         road_mask = cv2.dilate(road_mask, big_kernel)
 
-        img2, contours, hierarchy = cv2.findContours(road_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+        # img2, contours, hierarchy = cv2.findContours(road_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+        contours, hierarchy = cv2.findContours(road_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
         biggest_area = 0
         for contour in contours:
@@ -318,21 +323,23 @@ perspective_transform = perspective_data["perspective_transform"]
 pixel_Per_Metter = perspective_data['pixels_per_meter']
 orig_points = perspective_data["orig_points"]
 
-input_dir = "test_images"
-output_dir = "output_img"
+# input_dir = "test_images"
+# output_dir = "output_img"
 
 
-for image_file in os.listdir(input_dir):
-        if image_file.endswith("jpg"):
+# for image_file in os.listdir(input_dir):
+#         if image_file.endswith("jpg"):
             
-            img = mpimg.imread(os.path.join(input_dir, image_file))
-            video_file = LaneFinder(settings.ORIGINAL_SIZE, settings.UNWARPED_SIZE, cam_matrix, coefficient_distance_matrix,
-                perspective_transform, pixel_Per_Metter, "warning.png")
-            img = video_file.process_image(img, True, show_period=1, block=False)
+#             img = mpimg.imread(os.path.join(input_dir, image_file))
+#             video_file = LaneFinder(settings.ORIGINAL_SIZE, settings.UNWARPED_SIZE, cam_matrix, coefficient_distance_matrix,
+#                 perspective_transform, pixel_Per_Metter, "warning.png")
+#             img = video_file.process_image(img, True, show_period=1, block=False)
 
 
 
-video_files = ['harder_challenge_video.mp4','challenge_video.mp4', 'project_video.mp4']
+# video_files = ['harder_challenge_video.mp4','challenge_video.mp4', 'project_video.mp4']
+# video_files = ['../project_video.mp4']
+video_files = ['../2021-10-22-13-40-13_pacifica_mclean_loop_front_center_processed_5min.mp4']
 output_path = "outputvideo"
 for file in video_files:
     video_file = LaneFinder(settings.ORIGINAL_SIZE, settings.UNWARPED_SIZE, cam_matrix, coefficient_distance_matrix,

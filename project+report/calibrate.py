@@ -61,10 +61,3 @@ def calibrate(filename, silent = True):
 if __name__ == '__main__':
     calibrate(CALIB_FILE_NAME, True)
 
-
-
-
-
-
-
-
