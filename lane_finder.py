@@ -15,8 +15,10 @@ def get_curvature(matrix_coefficient, img_size, pixel_Per_Metter):
     return ((1 + (2*matrix_coefficient[0]*img_size[1]/pixel_Per_Metter[1] + matrix_coefficient[1])**2)**1.5) / np.absolute(2*matrix_coefficient[0])
 
 def get_center_shift(matrix_coefficient, img_size, pixel_Per_Metter):
-    # TODO: need to find out what goes here!
-    return 0
+    # taken from advanced_lane_detection fork
+    bottom_y = img_size[1] - 1
+    bottom_x = matrix_coefficient[0]*(bottom_y**2) + matrix_coefficient[1]*bottom_y + matrix_coefficient[2]
+    return (img_size[0]/2 - bottom_x)/pixel_Per_Metter[0]
 
 class LaneLineFinder:
     def __init__(self, img_size, pixel_Per_Metter, center_shift):
@@ -75,14 +77,14 @@ class LaneLineFinder:
         value_x = get_center_shift(matrix_coefficient, self.img_size, self.pixel_Per_Metter)
         curve = get_curvature(matrix_coefficient, self.img_size, self.pixel_Per_Metter)
 
-        print(value_x - self.shift)
+        # print(value_x - self.shift)
         if (self.stddev > 0.95) | (len(cord_y) < 150) | (math.fabs(value_x - self.shift) > math.fabs(0.5*self.shift)) \
                 | (curve < 30):
 
             self.coeffecient_matrix_history[0:2, 0] = 0
             self.coeffecient_matrix_history[2, 0] = (self.img_size[0]//2)/self.pixel_Per_Metter[0] + self.shift
             self.loss_lane()
-            print(self.stddev, len(cord_y), math.fabs(value_x-self.shift)-math.fabs(0.5*self.shift), curve)
+            # print(self.stddev, len(cord_y), math.fabs(value_x-self.shift)-math.fabs(0.5*self.shift), curve)
         else:
             self.firs_lane_found()
 
@@ -254,7 +256,8 @@ class LaneFinder:
 
         if self.found:
             self.line_equalization(0.875)
-#for better visualization i have used the other comptetioner visualization works to have good output.
+
+    # for better visualization i have used the other comptetioner visualization works to have good output.
     def lane_draw(self, img, thickness=6, alpha=0.8, beta=1, gamma=0):
         line_l = self.line_l.get_line_points()
         line_r = self.line_r.get_line_points()
@@ -274,8 +277,8 @@ class LaneFinder:
             warning_shape = self.warning_icon.shape
             corner = (10, (img.shape[1]-warning_shape[1])//2)
             patch = img[corner[0]:corner[0]+warning_shape[0], corner[1]:corner[1]+warning_shape[1]]
-            patch[self.warning_icon[:, :, 3] > 0] = self.warning_icon[self.warning_icon[:, :, 3] > 0, 0:3]
-            img[corner[0]:corner[0]+warning_shape[0], corner[1]:corner[1]+warning_shape[1]]=patch
+            # patch[self.warning_icon[:, :, 3] > 0] = self.warning_icon[self.warning_icon[:, :, 3] > 0, 0:3]
+            # img[corner[0]:corner[0]+warning_shape[0], corner[1]:corner[1]+warning_shape[1]] = patch
             cv2.putText(img, "Lane lost!", (550, 170), cv2.FONT_HERSHEY_PLAIN, fontScale=2.5,
                         thickness=5, color=(255, 255, 255))
             cv2.putText(img, "Lane lost!", (550, 170), cv2.FONT_HERSHEY_PLAIN, fontScale=2.5,
@@ -292,14 +295,14 @@ class LaneFinder:
             plt.clf()
             for i in range(3):
                 plt.subplot(start+i)
-                plt.imshow(video_file.mask[:, :, i]*255,  cmap='gray')
+                plt.imshow(video_file.mask[:, :, i]*255, cmap='gray')
                 plt.subplot(234)
             plt.imshow((video_file.line_l.line + video_file.line_r.line)*255)
 
             ll = cv2.merge((video_file.line_l.line, video_file.line_l.line*0, video_file.line_r.line))
             lm = cv2.merge((video_file.line_l.line_mask, video_file.line_l.line*0, video_file.line_r.line_mask))
             plt.subplot(235)
-            plt.imshow(video_file.roi_mask*255,  cmap='gray')
+            plt.imshow(video_file.roi_mask*255, cmap='gray')
             plt.subplot(236)
             plt.imshow(lane_img)
             if block:
@@ -323,31 +326,29 @@ perspective_transform = perspective_data["perspective_transform"]
 pixel_Per_Metter = perspective_data['pixels_per_meter']
 orig_points = perspective_data["orig_points"]
 
-# input_dir = "test_images"
-# output_dir = "output_img"
+input_dir = "mclean_images"
+output_dir = "outputimg"
 
 
-# for image_file in os.listdir(input_dir):
-#         if image_file.endswith("jpg"):
+for image_file in os.listdir(input_dir):
+    if image_file.endswith("jpg"):
             
-#             img = mpimg.imread(os.path.join(input_dir, image_file))
-#             video_file = LaneFinder(settings.ORIGINAL_SIZE, settings.UNWARPED_SIZE, cam_matrix, coefficient_distance_matrix,
-#                 perspective_transform, pixel_Per_Metter, "warning.png")
-#             img = video_file.process_image(img, True, show_period=1, block=False)
+        img = mpimg.imread(os.path.join(input_dir, image_file))
+        video_file = LaneFinder(settings.ORIGINAL_SIZE, settings.UNWARPED_SIZE, cam_matrix, coefficient_distance_matrix,
+            perspective_transform, pixel_Per_Metter, "warning.png")
+        img = video_file.process_image(img, True, show_period=1, block=False)
 
 
 
 # video_files = ['harder_challenge_video.mp4','challenge_video.mp4', 'project_video.mp4']
-# video_files = ['../project_video.mp4']
-video_files = ['../2021-10-22-13-40-13_pacifica_mclean_loop_front_center_processed_5min.mp4']
-output_path = "outputvideo"
-for file in video_files:
-    video_file = LaneFinder(settings.ORIGINAL_SIZE, settings.UNWARPED_SIZE, cam_matrix, coefficient_distance_matrix,
-                perspective_transform, pixel_Per_Metter, "warning.png")
-    output = os.path.join(output_path,"lane_"+file)
-    clip2 = VideoFileClip(file)
-    video_clip = clip2.fl_image(lambda x: video_file.process_image(x, reset=False, show_period=20))
-    video_clip.write_videofile(output, audio=False)
-
-
+# video_files = ['project_video.mp4']
+# video_files = ['2021-10-22-13-40-13_pacifica_mclean_loop_front_center_processed_5min.mp4']
+# output_path = "outputvideo"
+# for file in video_files:
+#     video_file = LaneFinder(settings.ORIGINAL_SIZE, settings.UNWARPED_SIZE, cam_matrix, coefficient_distance_matrix,
+#                 perspective_transform, pixel_Per_Metter, "warning.png")
+#     output = os.path.join(output_path,"lane_"+file)
+#     clip2 = VideoFileClip(file)
+#     video_clip = clip2.fl_image(lambda x: video_file.process_image(x, reset=False, show_period=20))
+#     video_clip.write_videofile(output, audio=False)
 
